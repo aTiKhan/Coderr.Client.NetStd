@@ -6,7 +6,7 @@
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\Coderr.Client.NetStd.xml</DocumentationFile>
     <RootNamespace>Coderr.Client</RootNamespace>
 
-    <PackageReleaseNotes>Added IExceptionProcessor to make it more similar to the NET452 package.</PackageReleaseNotes>
+    <PackageReleaseNotes>Added support for CorrelationId.</PackageReleaseNotes>
     <Version>1.2.5</Version>
   </PropertyGroup>
 
