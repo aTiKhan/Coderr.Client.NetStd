@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Security.Principal;
+using Coderr.Client.ContextCollections.Providers;
 using Coderr.Client.Contracts;
 
 namespace Coderr.Client.ContextCollections
@@ -41,7 +42,7 @@ namespace Coderr.Client.ContextCollections
             if (domainName == null) throw new ArgumentNullException(nameof(domainName));
             if (userName == null) throw new ArgumentNullException(nameof(userName));
 
-            var props = new Dictionary<string, string> {{"DomainName", domainName}, {"UserName", userName}};
+            var props = new Dictionary<string, string> { { "DomainName", domainName }, { "UserName", userName } };
             return new ContextCollectionDTO("UserCredentials", props);
         }
 
@@ -55,22 +56,7 @@ namespace Coderr.Client.ContextCollections
         {
             if (identity == null) throw new ArgumentNullException(nameof(identity));
 
-            var userDomain = SplitAccountName(identity.Name);
-
-            var props = new Dictionary<string, string>();
-            if (userDomain == null)
-            {
-                props.Add("UserName", identity.Name);
-            }
-            else
-            {
-                props.Add("DomainName", userDomain.Item1);
-                props.Add("UserName", userDomain.Item2);
-            }
-            props.Add("IsAuthenticated", identity.IsAuthenticated ? "true" : "false");
-            props.Add("AuthenticationType", identity.AuthenticationType);
-
-            return new ContextCollectionDTO("UserCredentials", props);
+            return UserCredentials.Create(identity);
         }
 
         /// <summary>
@@ -86,10 +72,23 @@ namespace Coderr.Client.ContextCollections
         public static ContextCollectionDTO CreateTags(params string[] tags)
         {
             if (tags == null) throw new ArgumentNullException(nameof(tags));
-            if (tags.Length == 0) throw new ArgumentOutOfRangeException("tags", "Must specify at least one tag.");
+            if (tags.Length == 0) throw new ArgumentOutOfRangeException(nameof(tags), "Must specify at least one tag.");
 
-            var props = new Dictionary<string, string> {{ "ErrTags", string.Join(",", tags)}};
+            var props = new Dictionary<string, string> { { "ErrTags", string.Join(",", tags) } };
             return new ContextCollectionDTO("IncidentTags", props);
+        }
+
+        /// <summary>
+        ///     Md5 hashes the username so that the user cannot be identified.
+        /// </summary>
+        /// <param name="identity">identity</param>
+        /// <returns>collection</returns>
+        /// <exception cref="ArgumentNullException">identity</exception>
+        public static ContextCollectionDTO CreateTokenForCredentials(IIdentity identity)
+        {
+            if (identity == null) throw new ArgumentNullException(nameof(identity));
+
+            return UserCredentials.CreateToken(identity);
         }
 
         /// <summary>
@@ -113,19 +112,5 @@ namespace Coderr.Client.ContextCollections
             return new ContextCollectionDTO("UserSuppliedInformation", props);
         }
 
-        private static Tuple<string, string> SplitAccountName(string accountName)
-        {
-            if (accountName == null) throw new ArgumentNullException(nameof(accountName));
-
-            var pos = accountName.IndexOf("\\", StringComparison.Ordinal);
-            if (pos != -1)
-            {
-                var a = accountName.Substring(0, pos);
-                var b = accountName.Substring(pos + 1);
-                return new Tuple<string, string>(a, b);
-            }
-
-            return null;
-        }
     }
 }

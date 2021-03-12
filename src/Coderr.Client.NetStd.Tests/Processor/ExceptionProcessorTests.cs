@@ -26,7 +26,8 @@ namespace Coderr.Client.NetStd.Tests.Processor
             sut.Build(ex, "Hello world");
             sut.Build(new ErrorReporterContext(this, ex));
 
-            timesInvoked.Should().Be(3);
+            // since tests can run in parallell
+            timesInvoked.Should().BeGreaterOrEqualTo(3);
         }
 
         [Fact]
@@ -74,6 +75,23 @@ namespace Coderr.Client.NetStd.Tests.Processor
         }
 
         [Fact]
+        public void should_add_log_entries_from_context()
+        {
+            var dispatcher = Substitute.For<IUploadDispatcher>();
+            var config = new CoderrConfiguration(dispatcher);
+            var ex = new Exception("hello");
+            var context = new ErrorReporterContext(this, ex)
+            {
+                LogEntries = new LogEntryDto[] { new LogEntryDto(DateTime.UtcNow, 1, "Hello") }
+            };
+
+            var sut = new ExceptionProcessor(config);
+            var actual = sut.Build(context);
+
+            actual.LogEntries[0].Message.Should().Be(context.LogEntries[0].Message);
+        }
+
+        [Fact]
         public void should_add_all_custom_collection_to_report()
         {
             var dispatcher = Substitute.For<IUploadDispatcher>();
@@ -83,7 +101,7 @@ namespace Coderr.Client.NetStd.Tests.Processor
             var collection2 = "Hello you too2".ToContextCollection("MyName2");
 
             var sut = new ExceptionProcessor(config);
-            var actual = sut.Build(ex, new[]{collection1,collection2});
+            var actual = sut.Build(ex, new[] { collection1, collection2 });
 
             actual.GetCollectionProperty("MyName", "Value").Should().Be("Hello you too");
             actual.GetCollectionProperty("MyName2", "Value").Should().Be("Hello you too2");
